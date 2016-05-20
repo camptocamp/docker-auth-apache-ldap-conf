@@ -1,0 +1,57 @@
+ServerRoot "/usr/local/apache2"
+Listen 80
+
+# avoid running as root
+LoadModule unixd_module modules/mod_unixd.so
+User daemon
+Group daemon
+
+# add authentication support
+LoadModule ldap_module modules/mod_ldap.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authnz_ldap_module modules/mod_authnz_ldap.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+
+# add proxy support
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+
+# allow configuring logs
+LoadModule log_config_module modules/mod_log_config.so
+
+ServerAdmin you@example.com
+
+# Deny filesystem access
+<Directory />
+  AllowOverride none
+  Require all denied
+</Directory>
+
+# Log warnings and errors to stderr
+ErrorLog /proc/self/fd/2
+LogLevel warn
+
+# Log access to stdout
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""  custom
+CustomLog /proc/self/fd/1 custom
+
+{{ range split ( getenv "LDAP_PROXY_UPSTREAMS" ) " " }}
+{{ $upstream := split . ";" }}
+<Location "{{ index $upstream 1 }}">
+  ProxyPass "{{ index $upstream 0 }}"
+  ProxyPassReverse "{{ index $upstream 0 }}"
+  AuthType Basic
+  AuthBasicProvider ldap
+  AuthName "Login with your ldap username"
+  AuthLDAPGroupAttribute {{ getenv "LDAP_PROXY_GROUP_ATTRIBUTE" }}
+  AuthLDAPGroupAttributeIsDN on
+  AuthLDAPUrl "{{ getenv "LDAP_PROXY_LDAP_URL" }}/{{ getenv "LDAP_PROXY_BASEDN" }}?{{ getenv "LDAP_PROXY_USERID_ATTRIBUTE" }}??"
+{{   if not ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }}
+  Require ldap-group {{ getenv "LDAP_PROXY_REQUIRED_GROUP" }}
+{{   end }}
+{{   if not ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) }}
+  Require ldap-user boatto charmier cionca delasoie duratti ebreton lecom macowicz mellier nmeystre pplaza recrosio
+{{   end }}
+</Location>
+{{ end }}

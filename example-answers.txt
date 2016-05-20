@@ -1,0 +1,7 @@
+LDAP_PROXY_UPSTREAMS=http://test.example.com/test;/test http://test2.example.com/test2;/test2
+LDAP_PROXY_LDAP_URL=ldap://ldap.example.com
+LDAP_PROXY_BASEDN=o=epfl,c=ch
+LDAP_PROXY_GROUP_ATTRIBUTE=member
+LDAP_PROXY_USERID_ATTRIBUTE=uid
+LDAP_PROXY_REQUIRED_GROUP=cn=example,ou=groups,dc=example,dc=com
+LDAP_PROXY_REQUIRED_USERS=user1 user2 user3
