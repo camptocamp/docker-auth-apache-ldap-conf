@@ -38,7 +38,8 @@ LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""  custom
 CustomLog /proc/self/fd/1 custom
 
 {{ range split ( getenv "LDAP_PROXY_UPSTREAMS" ) " " }}
-{{ $upstream := split . ";" }}
+{{   if not ( eq . "" ) }}
+{{   $upstream := split . ";" }}
 <Location "{{ index $upstream 1 }}">
   ProxyPass "{{ index $upstream 0 }}"
   ProxyPassReverse "{{ index $upstream 0 }}"
@@ -48,14 +49,15 @@ CustomLog /proc/self/fd/1 custom
   AuthLDAPGroupAttribute {{ getenv "LDAP_PROXY_GROUP_ATTRIBUTE" }}
   AuthLDAPGroupAttributeIsDN on
   AuthLDAPUrl "{{ getenv "LDAP_PROXY_LDAP_URL" }}/{{ getenv "LDAP_PROXY_BASEDN" }}?{{ getenv "LDAP_PROXY_USERID_ATTRIBUTE" }}??"
-{{   if not ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }}
+{{     if not ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }}
   Require ldap-group {{ getenv "LDAP_PROXY_REQUIRED_GROUP" }}
-{{   end }}
-{{   if not ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) }}
+{{     end }}
+{{     if not ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) }}
   Require ldap-user boatto charmier cionca delasoie duratti ebreton lecom macowicz mellier nmeystre pplaza recrosio
-{{   end }}
-{{   if and ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }} 
+{{     end }}
+{{     if and ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }} 
   Require valid-user
-{{   end }}
+{{     end }}
 </Location>
+{{   end }}
 {{ end }}
