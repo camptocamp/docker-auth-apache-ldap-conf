@@ -2,6 +2,8 @@ ServerName localhost
 ServerRoot "/usr/local/apache2"
 Listen 80
 
+LoadModule mpm_event_module modules/mod_mpm_event.so
+
 # avoid running as root
 LoadModule unixd_module modules/mod_unixd.so
 User daemon
@@ -32,11 +34,13 @@ ServerAdmin you@example.com
 
 # Log warnings and errors to stderr
 ErrorLog /proc/self/fd/2
-LogLevel warn
+LogLevel info
 
 # Log access to stdout
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\""  custom
 CustomLog /proc/self/fd/1 custom
+
+LDAPVerifyServerCert Off
 
 {{ range split ( getenv "LDAP_PROXY_UPSTREAMS" ) " " }}
 {{   if not ( eq . "" ) }}
@@ -44,12 +48,21 @@ CustomLog /proc/self/fd/1 custom
 <Location "{{ index $upstream 1 }}">
   ProxyPass "{{ index $upstream 0 }}"
   ProxyPassReverse "{{ index $upstream 0 }}"
+
   AuthType Basic
   AuthBasicProvider ldap
   AuthName "Login with your ldap username"
+  AuthLDAPUrl "{{ getenv "LDAP_PROXY_LDAP_URL" }}/{{ getenv "LDAP_PROXY_BASEDN" }}?{{ getenv "LDAP_PROXY_USERID_ATTRIBUTE" }}??"
+{{     if not ( eq ( getenv "LDAP_PROXY_BIND_DN" ) "" ) }}
+  AuthLDAPBindDN {{ getenv "LDAP_PROXY_BIND_DN" }}
+{{     end }}
+{{     if not ( eq ( getenv "LDAP_PROXY_BIND_PASSWORD" ) "" ) }}
+  AuthLDAPBindPassword {{ getenv "LDAP_PROXY_BIND_PASSWORD" }}
+{{     end }}
+{{     if not ( eq ( getenv "LDAP_PROXY_GROUP_ATTRIBUTE" ) "" ) }}
   AuthLDAPGroupAttribute {{ getenv "LDAP_PROXY_GROUP_ATTRIBUTE" }}
   AuthLDAPGroupAttributeIsDN on
-  AuthLDAPUrl "{{ getenv "LDAP_PROXY_LDAP_URL" }}/{{ getenv "LDAP_PROXY_BASEDN" }}?{{ getenv "LDAP_PROXY_USERID_ATTRIBUTE" }}??"
+{{     end }}
 {{     if not ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }}
   Require ldap-group {{ getenv "LDAP_PROXY_REQUIRED_GROUP" }}
 {{     end }}
