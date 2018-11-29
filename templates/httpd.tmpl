@@ -72,6 +72,9 @@ LDAPVerifyServerCert Off
 {{     if and ( eq ( getenv "LDAP_PROXY_REQUIRED_USERS" ) "" ) ( eq ( getenv "LDAP_PROXY_REQUIRED_GROUP" ) "" ) }} 
   Require valid-user
 {{     end }}
+{{     if not ( eq ( getenv "LDAP_PROXY_VERIFY_SERVER_CERT" ) "" ) }}
+  LDAPVerifyServerCert {{ getenv "LDAP_PROXY_VERIFY_SERVER_CERT" }}
+{{     end }}
 </Location>
 {{   end }}
 {{ end }}
